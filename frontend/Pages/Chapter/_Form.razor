@@ -1,0 +1,363 @@
+@inject VariaveisAmbiente VariaveisAmbiente
+@inject NavigationManager NavigationManager
+@inject APIAcess AcessaAPI
+
+@using System.IO
+@using System.Text
+
+<div class="row">
+    <div class="col-md-12 form">
+
+        <EditForm Model="@Entidade" OnValidSubmit="@OnValidSubmit">
+            <ValidationSummary />
+            <DataAnnotationsValidator />
+
+
+            <div class="row">
+
+
+                <div class="form-group col-md-12">
+                    <label>Story</label>
+                    <div class="">
+                        <RadzenDropDown AllowClear="false"
+                                        TValue="Guid"
+                                        Multiple="false"
+                                        AllowFiltering="true"
+                                        Placeholder="Select a story"
+                                        FilterCaseSensitivity=Radzen.FilterCaseSensitivity.CaseInsensitive
+                                        Data="@StoryList"
+                                        TextProperty="Title"
+                                        ValueProperty="Id"
+                                        Change="@(args => StoryChange(args))"
+                                        Value="@Entidade.StoryId"
+                                        Style="height: 38px; width: 100%;" />
+                        <ValidationMessage For="@(() => Entidade.StoryId)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Title</label>
+                    <div>
+                        <InputText class="form-control" @bind-Value="@Entidade.Title" />
+                        <ValidationMessage For="@(() => Entidade.Title)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Title in portuguese</label>
+                    <div>
+                        <InputText class="form-control" @bind-Value="@Entidade.Titulo" />
+                        <ValidationMessage For="@(() => Entidade.Titulo)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="IsStart" @bind="@AjustIsStart">
+                        <label class="form-check-label" for="IsStart">Start of the story?</label>
+                    </div>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="IsEnd" @bind="@AjustIsEnd">
+                        <label class="form-check-label" for="IsEnd">End of the story?</label>
+                    </div>
+                </div>
+
+
+                <div class="form-group col-md-12">
+                    <label>Content</label>
+                    <div>
+                        <RadzenHtmlEditor @bind-Value="@Entidade.Content" Style="height: 300px;" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Content in portuguese</label>
+                    <div>
+                        <RadzenHtmlEditor @bind-Value="@Entidade.Conteudo" Style="height: 300px;" MaxImageSize="10485760" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>Path 01</label>
+                    <div class="">
+                        <RadzenDropDown AllowClear="false"
+                                        TValue="Guid"
+                                        Multiple="false"
+                                        AllowFiltering="true"
+                                        Placeholder="Select a chapter"
+                                        FilterCaseSensitivity=Radzen.FilterCaseSensitivity.CaseInsensitive
+                                        Data="@ChapterList"
+                                        TextProperty="Title"
+                                        ValueProperty="Id"
+                                        Change="@(args => ChapterChange01(args))"
+                                        Value="@Entidade.Choice01"
+                                        Style="height: 38px; width: 100%;" />
+                        <ValidationMessage For="@(() => Entidade.Choice01)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>Path 02</label>
+                    <div class="">
+                        <RadzenDropDown AllowClear="false"
+                                        TValue="Guid"
+                                        Multiple="false"
+                                        AllowFiltering="true"
+                                        Placeholder="Select a chapter"
+                                        FilterCaseSensitivity=Radzen.FilterCaseSensitivity.CaseInsensitive
+                                        Data="@ChapterList"
+                                        TextProperty="Title"
+                                        ValueProperty="Id"
+                                        Change="@(args => ChapterChange02(args))"
+                                        Value="@Entidade.Choice02"
+                                        Style="height: 38px; width: 100%;" />
+                        <ValidationMessage For="@(() => Entidade.Choice02)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>Path 03</label>
+                    <div class="">
+                        <RadzenDropDown AllowClear="false"
+                                        TValue="Guid"
+                                        Multiple="false"
+                                        AllowFiltering="true"
+                                        Placeholder="Select a chapter"
+                                        FilterCaseSensitivity=Radzen.FilterCaseSensitivity.CaseInsensitive
+                                        Data="@ChapterList"
+                                        TextProperty="Title"
+                                        ValueProperty="Id"
+                                        Change="@(args => ChapterChange03(args))"
+                                        Value="@Entidade.Choice03"
+                                        Style="height: 38px; width: 100%;" />
+                        <ValidationMessage For="@(() => Entidade.Choice03)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>Path 04</label>
+                    <div class="">
+                        <RadzenDropDown AllowClear="false"
+                                        TValue="Guid"
+                                        Multiple="false"
+                                        AllowFiltering="true"
+                                        Placeholder="Select a chapter"
+                                        FilterCaseSensitivity=Radzen.FilterCaseSensitivity.CaseInsensitive
+                                        Data="@ChapterList"
+                                        TextProperty="Title"
+                                        ValueProperty="Id"
+                                        Change="@(args => ChapterChange04(args))"
+                                        Value="@Entidade.Choice04"
+                                        Style="height: 38px; width: 100%;" />
+                        <ValidationMessage For="@(() => Entidade.Choice04)" />
+                    </div>
+                </div>
+                
+                @if(Entidade.IsEnd.HasValue && Entidade.IsEnd.Value == true)
+                {
+                    <div class="form-group col-md-12">
+                        <label>
+                            Drag to the box below or click to select the image that will represent the end of this story.
+                        </label>
+                        <br />
+                        <div class="drag drag-drop-zone">
+                            <BlazorInputFile.InputFile OnChange="AjustImage" accept="image/png,image/jpeg" />
+                            <p>The file must be 400 x 400px in size and a maximum of 600KB.</p>
+                        </div>
+
+                        <div class="espaco-superior-inferior">
+                            <p>
+                                @if (!string.IsNullOrEmpty(ChapterImage.Image))
+                                {
+                                        <img src="@ChapterImage.Image" />
+                                        <br />
+                                }
+                            </p>
+                            @if (string.IsNullOrEmpty(ChapterImage.Status))
+                            {
+                                <p class="font-weight-bold">@ChapterImage.Status</p>
+                            }
+                        </div>
+
+                    </div>                    
+                }
+
+
+
+            </div>
+        <div>
+            @(new MarkupString(Mensagem))
+        </div>
+
+                @if (Processando)
+                {
+                    <div class="spinner-ainhamento-centro">
+                        <div class="spinner"></div>
+                    </div>
+                    <div class="form-group col-md-12 espacamento-cima-baixo"></div>
+                }
+
+                else
+                {
+                    <div class="form-group col-md-12" align="right">
+                        <br />
+                        <button @onclick="@Fechar" class="btn btn-success">
+                            <i class="fa fa-backward"></i> Close
+                        </button>
+
+                        &nbsp;&nbsp;
+                        <button type="submit" class="btn btn-success" >
+                            <i class="fa fa-save"></i> Save
+                        </button>
+
+                    </div>
+                }
+
+        </EditForm>
+
+    </div>
+</div>
+
+
+@code{
+    [Parameter] public Chapter Entidade { get; set; } = new();
+    [Parameter] public bool Processando { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public Radzen.DialogService? Modal { get; set; }
+
+    [Parameter] public string Mensagem { get; set; } = string.Empty;
+
+    UploadImage ChapterImage = new UploadImage();
+
+    private List<Story> StoryList;
+    private List<Chapter> ChapterList;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Entidade == null)
+            Entidade = new();
+        else
+        {
+            if (Entidade.StoryId != null)
+                await ChapterListLoad();
+        }
+
+        await StoryListLoad();
+    }
+
+    void Fechar()
+    {
+        if (Modal != null)
+            Modal.Close(true);
+    }
+
+    async Task StoryListLoad()
+    {
+        SearchFilter internalFilter = new SearchFilter();
+        internalFilter.PageSize = int.MaxValue;
+        PaginationList<Story> storyPagination = await AcessaAPI.BuscaDados<Story>("v1", "Story/GetList", internalFilter, Enumerators.APIConnection.api);
+        StoryList = storyPagination.Items;
+    }
+
+    async Task ChapterListLoad()
+    {
+        SearchFilter internalFilter = new SearchFilter();
+        internalFilter.PageSize = int.MaxValue;
+        internalFilter.Entity = new Dictionary<string, object>();
+        internalFilter.Entity.Add("StoryId", Entidade.StoryId);
+
+        PaginationList<Chapter> chapterPagination = await AcessaAPI.BuscaDados<Chapter>("v1", "Chapter/GetList", internalFilter, Enumerators.APIConnection.api);
+        if (chapterPagination != null)
+            ChapterList = chapterPagination.Items;
+        else
+            Entidade.IsStart = true;
+    }
+    
+    
+    async Task StoryChange(object selecao)
+    {
+        var selecaoConvertida = selecao is IEnumerable<string> ? string.Join(", ", (IEnumerable<string>)selecao) : selecao;
+        Entidade.StoryId = (Guid)selecaoConvertida;
+        
+        await ChapterListLoad();
+    }
+
+    async Task ChapterChange01(object selecao)
+    {
+        var selecaoConvertida = selecao is IEnumerable<string> ? string.Join(", ", (IEnumerable<string>)selecao) : selecao;
+        Entidade.Choice01 = (Guid)selecaoConvertida;
+    }
+
+    async Task ChapterChange02(object selecao)
+    {
+        var selecaoConvertida = selecao is IEnumerable<string> ? string.Join(", ", (IEnumerable<string>)selecao) : selecao;
+        Entidade.Choice02 = (Guid)selecaoConvertida;
+    }
+
+    async Task ChapterChange03(object selecao)
+    {
+        var selecaoConvertida = selecao is IEnumerable<string> ? string.Join(", ", (IEnumerable<string>)selecao) : selecao;
+        Entidade.Choice03 = (Guid)selecaoConvertida;
+    }
+
+    async Task ChapterChange04(object selecao)
+    {
+        var selecaoConvertida = selecao is IEnumerable<string> ? string.Join(", ", (IEnumerable<string>)selecao) : selecao;
+        Entidade.Choice04 = (Guid)selecaoConvertida;
+    }
+
+
+    private bool AjustIsStart
+    {
+        get => Entidade.IsStart ?? false;
+        set => Entidade.IsStart = value;
+    }
+
+    private bool AjustIsEnd
+    {
+        get => Entidade.IsEnd ?? false;
+        set => Entidade.IsEnd = value;
+    }
+
+    async Task AjustImage(BlazorInputFile.IFileListEntry[] files)
+    {
+        await UploadImage(files, ChapterImage);
+        Entidade.Badge = Encoding.ASCII.GetBytes(ChapterImage.Image);
+    }
+
+    async Task UploadImage(BlazorInputFile.IFileListEntry[] files, UploadImage image)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            var format = "image/jpeg";
+
+            if (file.Type.Contains("image"))
+            {
+                if (file.Size < 600000)
+                {
+                    var ms = new MemoryStream();
+                    await file.Data.CopyToAsync(ms);
+
+                    image.Image = $"data:{format};base64,{Convert.ToBase64String(ms.ToArray())}";
+                    image.Status = "";
+                    //Entidade.Cabecalho = ms.ToArray();
+                }
+                else
+                {
+                    image.Status = "The file can have a maximum size of 600KB.";
+                }
+
+            }
+            else
+            {
+                image.Status = "Only image files are allowed.";
+            }
+        }
+    }
+}

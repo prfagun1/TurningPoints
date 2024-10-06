@@ -1,0 +1,38 @@
+﻿@page "/Admin/Log"
+
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IPermission? PermissoesInternas;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AuthenticationState);
+
+        var usuario = (await AuthenticationState)?.User;
+        PermissoesInternas = new AdministrationPermission(usuario);
+    }
+}
+
+<AuthorizeView Roles="@PermissoesInternas?.ReadPermission">
+    <Authorized>
+        <br />
+        <h1>Log</h1>
+        <hr />
+        <br />
+    </Authorized>
+    <NotAuthorized>
+        <frontend.Shared.AcessoNegado />
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+
+
+

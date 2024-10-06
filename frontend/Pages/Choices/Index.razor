@@ -1,0 +1,186 @@
+﻿@page "/Choices"
+
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject APIAcess AcessaAPI
+
+@using System.IO
+@using System.Text
+
+@code {
+    protected override async Task OnParametersSetAsync()
+    {
+        await CarregaEntidade();
+    }
+}
+
+
+<h1 class="title-green">Turning Points</h1>
+
+<br />
+
+<div class="row">
+
+    <div class="input-group">
+        <InputText id="tdsInput" class="form-control" @bind-Value="@filtro.Description" placeholder="Pesquise sua história" @onkeypress=@HandleKeyPress />
+        <div class="input-group-append">
+            <button type="button" value="Pesquisar" class="btn btn-success" @onclick="Pesquisar">
+                <span class="oi oi-magnifying-glass"></span>
+            </button>
+        </div>
+    </div>
+
+</div>
+<br />
+
+
+
+<br />
+
+<div>
+    @(new MarkupString(Mensagem))
+</div>
+
+    @if (ListaEntidade == null)
+    {
+        <div class="spinner-ainhamento-centro">
+            <div class="spinner"></div>
+        </div>
+    }
+    else
+    {
+        @if (ListaEntidade.Items == null)
+        {
+            <div class="spinner-ainhamento-centro">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            @if (ListaEntidade.Items.Count == 0)
+            {
+                if (string.IsNullOrEmpty(Mensagem))
+                {
+                <p>No stories were found.</p>
+                    <br />
+                }
+            }
+            else
+            {
+
+                <br>
+
+                <section class="row relatorio-fonte-pequena">
+                    @foreach (var item in ListaEntidade.Items)
+                    {
+
+                            <div class="col-sm-6 col-lg-4 cards-padding">
+                                <div class="card border-dark same-height">
+                                    <div class="card-header bg-success text-light text-center">
+                                        <strong>@item.Title </strong> - @item.RecommendedAge years (recommended age) <br />
+                                    </div>
+                                    <div class="card-body report-cards text-center">
+                                        <p class="card-text">
+                                            @item.Description 
+                                        </p>
+                                        <p class="card-text">
+                                            Tags: @item.Tags 
+                                        </p>
+                                        <p>
+                                            @if (item.Image != null)
+                                            {
+                                                <img src=@System.Text.Encoding.Default.GetString(item.Image) />
+                                            }
+                                        </p>
+                                    </div>
+                                    <div class="card-footer  bg-transparent text-center pointer">
+                                        <a class="btn btn-success botao-card text-white">
+                                            <span class="oi oi-link-intact"></span>
+                                            <span @onclick="(() => StoryStart(item.Id))">Start this journey</span>
+
+                                            <span class="oi oi-link-intact"></span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </section>
+
+
+
+                <frontend.Shared.Paginacao PaginaTotal="@ListaEntidade.TotalPages" PaginaIndice="@filtroPesquisa.PageIndex" MetodoChamado="@CarregaEntidadePaginada" />
+
+            }
+
+        }
+    }
+
+@code {
+    private Dictionary<int, ElementReference> LinhasTabela = new Dictionary<int, ElementReference>();
+    private string Chamada = "Story";
+
+    private string Mensagem = "";
+    private int PaginaTotal = 0;
+
+    private Story filtro = new Story();
+    private SearchFilter filtroPesquisa = new SearchFilter();
+    private PaginationList<Story>? ListaEntidade;
+
+
+    protected async Task StoryStart(Guid id)
+    {
+        NavigationManager.NavigateTo($"Choices/StartStory/{id}");
+    }
+
+    protected async Task CarregaEntidadeInterno()
+    {
+        Mensagem = "";
+        ListaEntidade = await AcessaAPI.BuscaDados<Story>("v1", $"{Chamada}/GetListOpen", filtroPesquisa, Enumerators.APIConnection.api);
+
+        if (ListaEntidade == null || ListaEntidade.Items == null)
+        {
+            ListaEntidade = new PaginationList<Story>();
+            ListaEntidade.Items = new List<Story>();
+            Mensagem = PaginasHelper.GetMensagemErro();
+
+        }
+
+        PaginaTotal = ListaEntidade.TotalPages;
+        StateHasChanged();
+    }
+
+    protected async Task CarregaEntidade()
+    {
+        await CarregaEntidadeInterno();
+    }
+
+
+    public async Task CarregaEntidadePaginada(int pagina)
+    {
+        filtroPesquisa.Entity = ConfiguraFiltro.GetFiltro<Story>(filtro);
+        filtroPesquisa.PageIndex = pagina;
+        await CarregaEntidadeInterno();
+    }
+
+    private async Task Pesquisar()
+    {
+        filtroPesquisa.Entity = ConfiguraFiltro.GetFiltro(filtro);
+        filtroPesquisa.PageIndex = 1;
+        await CarregaEntidadeInterno();
+    }
+
+
+    private async Task HandleKeyPress(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await JSRuntime.InvokeVoidAsync("moverFocoParaElemento", "pesquisar");
+            await Pesquisar();
+        }
+    }
+
+
+}
+
+

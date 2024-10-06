@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<RadzenDialog />
+<RadzenNotification />
+<RadzenContextMenu />
+<RadzenTooltip />
+
+<div class="page fundo-paginas cor-fundo ">
+
+
+
+    <main>
+        <div class="top-row px-4 menu-superior ">
+
+            <div class="alinha-menu-superior">
+                <frontend.Shared.Menu.Administration />
+            </div>
+
+            <div >
+                <LoginDisplay />
+            </div>
+
+        </div>
+        
+
+        <article class="content px-4">
+            @Body
+        </article>
+
+    </main>
+</div>
+
+
+
+@code {
+    private string Menu = string.Empty;
+
+    protected override bool ShouldRender()
+    {
+
+        string url = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length);
+        int fim = url.IndexOf("/");
+        url = fim > 1 ? url.Substring(0, fim) : url;
+
+        bool render = Menu != url.ToLower();
+        Menu = url.ToLower();
+
+        return true;
+
+    }
+
+}

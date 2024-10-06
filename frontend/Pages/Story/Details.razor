@@ -1,0 +1,115 @@
+@attribute [Authorize]
+@inject APIAcess APIAcess
+@inject NavigationManager NavigationManager
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IPermission? PermissoesInternas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AuthenticationState);
+        PermissoesInternas = new AdministrationPermission((await AuthenticationState).User);
+    }
+}
+
+<AuthorizeView Roles="@PermissoesInternas?.ReadPermission">
+    <Authorized>
+        <div>
+            <hr />
+            <dl class="row">
+                <dt class="col-sm-2">
+                    Title
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.Title
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Title in portuguese
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.Titulo
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Description
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.Description
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Description in portuguese
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.Descricao
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Recommended age
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.RecommendedAge
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Image
+                </dt>
+                <dd class="col-sm-10">
+                    @if (Entidade.Image != null)
+                    {
+                        <img src=@System.Text.Encoding.Default.GetString(Entidade.Image) />
+                    }
+                </dd>
+
+
+
+            </dl>
+            <hr />
+            <dl class="row">
+                <dt class="col-sm-2">
+                    User who modified
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.RecordUser
+                    &nbsp;
+                </dd>
+                <dt class="col-sm-2">
+                    Date of modification
+                </dt>
+                <dd class="col-sm-10">
+                    @Entidade.RecordDate
+                    &nbsp;
+                </dd>
+            </dl>
+            <hr />
+        </div>
+
+        <div class="row">
+            <div class="col-md-12" align="right">
+                <button type="submit" value="Fechar" class="btn btn-success" @onclick="Close">
+                    Fechar
+                </button>
+            </div>
+        </div>
+
+        @code {
+
+            [Parameter] public Story Entidade { get; set; } = new();
+            [Parameter] public Radzen.DialogService? Modal { get; set; }
+
+            void Close()
+            {
+                if (Modal != null)
+                    Modal.Close(true);
+            }
+            
+        }
+    </Authorized>
+    <NotAuthorized>
+        <frontend.Shared.AcessoNegado />
+    </NotAuthorized>
+</AuthorizeView>

@@ -1,0 +1,57 @@
+@attribute [Authorize]
+
+@inject APIAcess APIAcess
+@inject HttpClient HttpClient;
+@inject VariaveisAmbiente VariaveisAmbiente
+@inject NavigationManager NavigationManager
+
+@code{
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IPermission? PermissoesInternas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AuthenticationState);
+        PermissoesInternas = new AdministrationPermission((await AuthenticationState).User);
+    }
+}
+
+
+<AuthorizeView Roles="@PermissoesInternas?.ReadPermission">
+    <Authorized>
+
+
+        <frontend.Pages.Story._Form Entidade="@Entidade" OnValidSubmit="@Salvar" Processando="@Processando" Modal="@Modal" Mensagem="@Mensagem" />
+
+        @code {
+
+            [Parameter] public Radzen.DialogService? Modal { get; set; }
+            Story Entidade = new Story();
+            private bool Processando;
+            private string Mensagem = string.Empty;
+
+            private async Task Salvar()
+            {
+                await Task.Run(() => Processando = true);
+                var retorno = await APIAcess.SalvaDados<Story>("v1", "Story", Entidade, Enumerators.APIConnection.api);
+
+                if (retorno != null){
+                    Mensagem = "<div class=\"alert alert-success\" role=\"alert\">Data saved successfully</div>";
+                    Entidade = new();
+                }
+                else{
+                    Mensagem = "<div class=\"alert alert-danger\" role=\"alert\"Error saving data, please try again later</div>";
+                }
+
+                await Task.Run(() => Processando = false);
+                StateHasChanged();
+            }
+        }
+
+    </Authorized>
+    <NotAuthorized>
+        <frontend.Shared.AcessoNegado />
+    </NotAuthorized>
+</AuthorizeView>

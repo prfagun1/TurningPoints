@@ -1,0 +1,140 @@
+﻿@inject NavigationManager NavigationManager
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shadow">
+
+    <div class="text-light navbar-toggler" data-toggle="collapse"> Admin</div>
+
+    <button class="navbar-toggler align-content-end" @onclick="ToggleNavMenu" type="button" data-toggle="collapse" data-target="#navbarMenuSuperior" aria-controls="navbarMenuSuperior" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+
+
+    <div class="@NavMenuCssClass navbar-collapse d-sm-inline-flex navbarMenuSuperior-recuo " id="navbarMenuSuperior">
+        <ul class="navbar-nav flex-grow-1">
+
+
+
+            <AuthorizeView Roles="@(new AdministrationPermission().ReadPermission)">
+                <Authorized>
+                    <li class="nav-item dropdown show">
+
+                        <NavLink class="nav-link dropdown-toggle pointer distancia-itens-menu-superior" @onclick='( () => SetMenu("Admin"))' id="navbarDropdown">
+                            <span class=" menu-superior-item" aria-hidden="true"> Admin</span>
+                        </NavLink>
+
+                        @if (Menu.GetValueOrDefault("Admin"))
+                        {
+                            <ul>
+                                <li class="dropdown-menu show" aria-labelledby="navbarDropdown" @onclick='( () => SetMenu("Admin"))'>
+                                    <ul class="sem-bullets">
+                                        <li class="nav-item">
+                                            <NavLink class="nav-link item-menu" href="/Admin/Log" @onclick='(() => RedirectPage("Admin/Log"))' Match="NavLinkMatch.Prefix">
+                                                <span class="menu-item" title="Logs">Logs</span>
+                                            </NavLink>
+                                            <NavLink class="nav-link  item-menu" href="/Admin/Parameter" @onclick='(() => RedirectPage("Admin/Parameter"))' Match="NavLinkMatch.Prefix">
+                                                <span class="menu-item" title="Parametros">Parameters</span>
+                                            </NavLink>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        }
+
+                    </li>
+                </Authorized>
+            </AuthorizeView>
+
+
+
+            <AuthorizeView Roles="@(new AdministrationPermission().ReadPermission)">
+                <Authorized>
+                    <li class="nav-item dropdown show">
+
+                        <NavLink class="nav-link dropdown-toggle pointer distancia-itens-menu-superior" @onclick='( () => SetMenu("Story"))' id="navbarDropdown">
+                            <span class=" menu-superior-item" aria-hidden="true">Stories</span>
+                        </NavLink>
+
+                        @if (Menu.GetValueOrDefault("Story"))
+                        {
+                            <ul>
+                                <li class="dropdown-menu show" aria-labelledby="navbarDropdown" @onclick='( () => SetMenu("Story"))'>
+                                    <ul class="sem-bullets">
+                                        <li class="nav-item">
+                                            <NavLink class="nav-link item-menu" href="/Story" @onclick='(() => RedirectPage("Story"))' Match="NavLinkMatch.Prefix">
+                                                <span class="menu-item" title="Historias">Stories</span>
+                                            </NavLink>
+                                        </li>
+                                        <li class="nav-item">
+                                            <NavLink class="nav-link item-menu" href="/Chapter" @onclick='(() => RedirectPage("Chapter"))' Match="NavLinkMatch.Prefix">
+                                                <span class="menu-item" title="Capítulos">Chapters</span>
+                                            </NavLink>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        }
+
+                    </li>
+                </Authorized>
+            </AuthorizeView>
+
+        </ul>
+
+    </div>
+    
+</nav>
+
+
+@code {
+
+    private Dictionary<string, bool> Menu = new Dictionary<string, bool>();
+
+    bool collapseNavMenu = true;
+
+    string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    void CollapseNavMenu()
+    {
+        collapseNavMenu = true;
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Task.Run(() => InicializaMenu());
+    }
+
+    private void InicializaMenu()
+    {
+        Menu = new Dictionary<string, bool>();
+        Menu.Add("Parameter", false);
+        Menu.Add("Admin", false);
+        Menu.Add("Story", false);
+    }
+
+    private void SetMenu(string menuSelecionado)
+    {
+        bool status = Menu.GetValueOrDefault(menuSelecionado) ? false : true;
+
+        InicializaMenu();
+
+        Menu.Remove(menuSelecionado);
+        Menu.Add(menuSelecionado, status);
+    }
+
+
+
+    private void RedirectPage(string pagina)
+    {
+        NavigationManager.NavigateTo($"/{pagina}", true);
+    }
+
+
+
+}

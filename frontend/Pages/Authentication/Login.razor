@@ -1,0 +1,138 @@
+﻿@layout LoginLayout
+@page "/login"
+@inject IAuthService AuthService
+@inject APIAcess APIAcess
+@inject NavigationManager NavigationManager
+
+
+<div class="limiter">
+    <div class="container-login100">
+        <div class="wrap-login100">
+            <EditForm Model="loginModel" OnValidSubmit="HandleLogin" class="login100-form">
+                <DataAnnotationsValidator />
+
+                <span class="login100-form-logo">
+                    <img src="/img/login.jpg" alt="logo" width="120" height="120">
+                </span>
+
+                <span class="login100-form-title p-b-34 p-t-27">
+                    Turning Points
+                </span>
+
+                <div class="validation-message">@MensagemAutenticacao</div>
+                <br />
+
+                <div class="@ExibeLogin">
+
+                    <div class="wrap-input100 validate-input" data-validate="Informe o usuário">
+                        <InputText Id="Usuario" @bind-Value="loginModel.Email" type="text" name="username" placeholder="Email" class="input100" @onkeypress="RemoveErros" />
+                        <span class="focus-input100" data-placeholder="&#xf207;"></span>
+                        <ValidationMessage For="@(() => loginModel.Email)" class="validacao-erros" />
+                    </div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Informe a senha">
+                        <InputText Id="password" @bind-Value="loginModel.Password" type="password" name="pass" placeholder="Password" class="input100" @onkeypress="RemoveErros" />
+                        <span class="focus-input100" data-placeholder="&#xf191;"></span>
+                        <ValidationMessage For="@(() => loginModel.Password)" class="validacao-erros" />
+                    </div>
+
+                </div>
+
+
+                <div class="@ExibeLogin">
+
+                    @if (!AguardaLogin)
+                    {
+                        <div class="container-login100-form-btn">
+                            <button class="login100-form-btn">
+                                Login
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="container-login100-form-btn ajusta-altura">
+                            <div class="spinner"></div>
+                        </div>
+                    }
+
+                    <div class="text-center p-t-90">
+                        <a class="txt1" href="#"></a>
+                    </div>
+
+                </div>
+
+
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    private LoginViewModel loginModel = new LoginViewModel();
+    private string MensagemAutenticacao = "";
+    private bool AguardaLogin = false;
+
+    private string ExibeLogin = "";
+
+
+    private void RemoveErros()
+    {
+        MensagemAutenticacao = "";
+    }
+
+
+
+    private async Task HandleLogin()
+    {
+
+        await Task.Run(() => AugardaLoginTarefa(true));
+
+        if (loginModel != null && !string.IsNullOrEmpty(loginModel.Email))
+            loginModel.Email = loginModel.Email.ToLower();
+
+        if (loginModel == null)
+        {
+            ExibeLogin = "";
+            MensagemAutenticacao = "Invalid username or password!";
+            return;
+        }
+
+        var result = await AuthService.Login(loginModel);
+
+        if (result == null)
+        {
+            MensagemAutenticacao = "Erro ao acessar o servidor de autenticação, contate o administrator do sistema.";
+            await Task.Run(() => AugardaLoginTarefa(false));
+            return;
+        }
+
+        if (result.Successful)
+        {
+            await Task.Run(() => AugardaLoginTarefa(true));
+            var url = System.Web.HttpUtility.UrlDecode(this.NavigationManager.Uri).Split("?returnUrl=");
+
+            if (url.Length > 1)
+                NavigationManager.NavigateTo(url[1]);
+            else
+                NavigationManager.NavigateTo("\\");
+        }
+        else
+        {
+            ExibeLogin = "";
+            MensagemAutenticacao = "Invalid username or password!";
+        }
+
+        await Task.Run(() => AugardaLoginTarefa(false));
+    }
+
+
+    protected async Task AugardaLoginTarefa(bool status)
+    {
+        await Task.Run(() => AguardaLogin = status);
+    }
+
+}

@@ -1,0 +1,37 @@
+﻿@inject NavigationManager NavigationManager
+
+
+
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shado">
+    <div class="text-light navbar-toggler" data-toggle="collapse"></div>
+
+    <button class="navbar-toggler align-content-end" @onclick="ToggleNavMenu" type="button" data-toggle="collapse" data-target="#navbarMenuSuperior" aria-controls="navbarMenuSuperior" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+
+    <div class="@NavMenuCssClass navbar-collapse d-sm-inline-flex flex-sm-row-reverse navbarMenuSuperior-recuo" id="navbarMenuSuperior">
+    </div>
+
+
+</nav>
+
+
+@code {
+
+    bool collapseNavMenu = true;
+
+    string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    void CollapseNavMenu()
+    {
+        collapseNavMenu = true;
+    }
+
+}

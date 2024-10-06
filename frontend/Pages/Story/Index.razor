@@ -1,0 +1,322 @@
+﻿@page "/Story"
+
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject APIAcess AcessaAPI
+
+@using System.IO
+@using System.Text
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+    private IPermission? PermissoesInternas;
+    private string PermissaoEscrita = "esconde-div";
+    protected override async Task OnParametersSetAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AuthenticationState);
+
+        PermissoesInternas = new AdministrationPermission((await AuthenticationState).User);
+
+        PermissaoEscrita = PermissoesInternas.WritePermission;
+
+        await CarregaEntidade();
+    }
+}
+
+<AuthorizeView Roles="@PermissoesInternas?.WritePermission">
+    <Authorized>
+
+        <h3>Stories list</h3>
+
+        <br />
+
+        <div class="row">
+            <div class="form-group col-md-8">
+                <div>
+                    Title
+                </div>
+
+                <input @bind-value="@filtro.Title" @bind-value:event="oninput" class="form-control searchBoxSize" @onkeypress=@HandleKeyPress>
+            </div>
+
+            <div class="form-group col-md-4">
+                <div>
+                    Recommended age
+                </div>
+
+                <input @bind-value="@filtro.RecommendedAge" @bind-value:event="oninput" class="form-control searchBoxSize" @onkeypress=@HandleKeyPress>
+            </div>
+
+        </div>
+        <br />
+
+        <div class="row">
+            <div class="col-md-12" align="right">
+                <button id="pesquisar" type="submit" value="Pesquisar" class="btn btn-success" @onclick="Pesquisar">
+                    <span class="oi oi-media-play">&nbsp;</span>
+                    Search
+                </button>
+            </div>
+        </div>
+
+        <div class="@PermissaoEscrita">
+            <button type="button" value="Criar" class="btn btn-success" @onclick="Criar">
+                <span class="oi oi-plus" aria-hidden="true"></span> Create an story
+            </button>
+        </div>
+
+        <br />
+
+        <div>
+            @(new MarkupString(Mensagem))
+        </div>
+
+        @if (ListaEntidade == null)
+        {
+            <div class="spinner-ainhamento-centro">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            @if (ListaEntidade.Items == null)
+            {
+                <div class="spinner-ainhamento-centro">
+                    <div class="spinner"></div>
+                </div>
+            }
+            else
+            {
+                @if (ListaEntidade.Items.Count == 0)
+                {
+                    if (string.IsNullOrEmpty(Mensagem))
+                    {
+                        <p>No data was returned.</p>
+                        <br />
+                    }
+                }
+                else
+                {
+
+                    <br>
+
+                    <table class="table">
+                        <thead class="table-report-header " valign="middle">
+                            <tr>
+                                @{
+                                    foreach (string coluna in colunas)
+                                    {
+                                        <th class="cabecalhos-pesquisa" valign="middle">
+                                            @coluna.Split(",")[0]&nbsp;
+                                            @if (coluna.Split(",")[1] == "S")
+                                            {
+                                                <span title="Ordenar" class="oi oi-elevator ordenacao" @onclick='(() => Ordena(coluna.Split(",")[0]))'></span>
+                                            }
+                                        </th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int indice = 0;
+                                foreach (var item in ListaEntidade.Items)
+                                {
+                                    var indiceInterno = indice;
+                                    <tr @ref='LinhasTabela[indiceInterno]' @onmouseover=' (() => PaginasHelper.AdicionaCor(indiceInterno, JSRuntime,LinhasTabela))' @onmouseleave='(() =>  PaginasHelper.RemoveCor(indiceInterno,JSRuntime,LinhasTabela))'>
+
+
+                                        <td class="cabecalhos-pesquisa  text-center align-middl">
+                                            @if (item.Image != null)
+                                            {
+                                                <img src=@System.Text.Encoding.Default.GetString(item.Image) />
+                                            }
+                                        </td>
+
+                                        <td class="cabecalhos-pesquisa align-middle">
+                                            @item.Title
+                                        </td>
+                                        <td class="align-middle">
+                                            @item.Description
+                                        </td>
+                                        <td class="cabecalhos-pesquisa align-middle">
+                                            @item.RecommendedAge
+                                        </td>
+
+
+
+                                        <td class="cabecalhos-pesquisa alinhamento-direita align-middle">
+                                            <button class="btn btn-success botoes-index" @onclick="(() => Detalhes(item))"><i class="oi oi-eye"></i> Details</button>
+                                            <button class="btn btn-success botoes-index @PermissaoEscrita" @onclick="(() => Editar(item))"><i class="oi oi-pencil"></i> Edit</button>
+                                            <button class="btn btn-danger botoes-index-apagar @PermissaoEscrita" @onclick="(() => Apagar(item.Id, item.Title))"><i class="oi oi-trash"></i> Delte</button>
+                                        </td>
+                                    </tr>
+                                    indice++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+
+                    <frontend.Shared.Paginacao PaginaTotal="@ListaEntidade.TotalPages" PaginaIndice="@filtroPesquisa.PageIndex" MetodoChamado="@CarregaEntidadePaginada" />
+
+                }
+
+            }
+        }
+
+        @code {
+            private Dictionary<int, ElementReference> LinhasTabela = new Dictionary<int, ElementReference>();
+            private String[] colunas = new string[] {",N", "Title,S", "Description,S", "Recommended age,S", "," };
+            private string Chamada = "Story";
+
+            private String UrlChamada = $"/Story";
+            private string Mensagem = "";
+            private int PaginaTotal = 0;
+
+            private Story filtro = new Story();
+            private SearchFilter filtroPesquisa = new SearchFilter();
+            private PaginationList<Story>? ListaEntidade;
+
+
+            protected async Task CarregaEntidadeInterno()
+            {
+                Mensagem = "";
+                ListaEntidade = await AcessaAPI.BuscaDados<Story>("v1", $"{Chamada}/GetList", filtroPesquisa, Enumerators.APIConnection.api);
+
+                if (ListaEntidade == null || ListaEntidade.Items == null)
+                {
+                    ListaEntidade = new PaginationList<Story>();
+                    ListaEntidade.Items = new List<Story>();
+                    Mensagem =  PaginasHelper.GetMensagemErro();
+
+                }
+
+                PaginaTotal = ListaEntidade.TotalPages;
+                StateHasChanged();
+            }
+
+            protected async Task CarregaEntidade()
+            {
+                await CarregaEntidadeInterno();
+            }
+
+
+            public async Task CarregaEntidadePaginada(int pagina)
+            {
+                filtroPesquisa.Entity = ConfiguraFiltro.GetFiltro<Story>(filtro);
+                filtroPesquisa.PageIndex = pagina;
+                await CarregaEntidadeInterno();
+            }
+
+            private async Task Pesquisar()
+            {
+                filtroPesquisa.Entity = ConfiguraFiltro.GetFiltro(filtro);
+                filtroPesquisa.PageIndex = 1;
+                await CarregaEntidadeInterno();
+            }
+
+            private async Task Ordena(string ordenacao)
+            {
+
+
+            if (ordenacao == "Recommended age")
+                    ordenacao = "RecommendedAge";
+
+
+                PaginasHelper.ConfiguraEntidadeOrdenada(ordenacao, filtroPesquisa);
+                await CarregaEntidadeInterno();
+            }
+
+
+            private async Task HandleKeyPress(KeyboardEventArgs args)
+            {
+                if (args.Key == "Enter")
+                {
+                    await JSRuntime.InvokeVoidAsync("moverFocoParaElemento", "pesquisar");
+                    await Pesquisar();
+                }
+            }
+
+            async Task Criar()
+            {
+                string titulo = "Story registration";
+                await DialogService.OpenAsync(titulo, ds =>
+                    @<RadzenCard Style="padding: 20px; overflow-y: auto;">
+                        <frontend.Pages.Story.Create Modal="ds" />
+                    </RadzenCard>
+                 , new DialogOptions() { Width = "80%", Top = "0%" }
+            );
+
+            await Pesquisar();
+            }
+
+            async Task Detalhes(Story entidade)
+            {
+                string titulo = $"Story details of {entidade.Title}";
+
+                await DialogService.OpenAsync(titulo, ds =>
+                    @<RadzenCard Style="padding: 20px;">
+                        <frontend.Pages.Story.Details Entidade="entidade" Modal="ds" />
+                    </RadzenCard>
+                    , new DialogOptions() { Width = "80%", Top = "0%" }
+                );
+            }
+
+
+            async Task Editar(Story entidade)
+            {
+                string titulo = $"Editing story  {entidade.Title}";
+                await DialogService.OpenAsync(titulo, ds =>
+                    @<RadzenCard Style="padding: 20px;">
+                        <frontend.Pages.Story.Edit Entidade="entidade" Modal="ds" />
+                    </RadzenCard>
+                    , new DialogOptions() { Width = "90%", Top = "0%" }
+                );
+            }
+
+
+            private async Task Apagar(Guid id, string? name)
+            {
+                await DialogService.OpenAsync("Confirmação de exclusão", ds =>
+                @<RadzenCard Style="padding: 20px;">
+                <p Style="margin-bottom: 10px; padding-bottom: 20px">Are you sure you want to delete the @name record?</p>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-12" align="right">
+                            <button class="btn btn-success" @onclick="(() => ds.Close(true))">Cancel</button>
+                            <button class="btn btn-danger" @onclick="(() => ApagarConfirmacao(id, name, ds))">Delete</button>
+                        </div>
+                    </div>
+                </RadzenCard>
+            , new DialogOptions() { Top = "10%" }
+            );
+        }
+
+        private async Task ApagarConfirmacao(Guid id, string? name, Radzen.DialogService ds)
+        {
+            ds.Close(true);
+            var retorno = await AcessaAPI.Apagar("v1", Chamada, id, Enumerators.APIConnection.api);
+
+                if (retorno)
+                {
+                    await CarregaEntidade();
+                    Mensagem = $"<div class=\"alert alert-success\" role=\"alert\">Record {name} deleted successfully.</div>";
+                }
+                else
+                {
+                    Mensagem = $"<div class=\"alert alert-danger\" role=\"alert\">Error deleting record {name}, please try again later.</div>";
+                }
+            }
+
+        }
+
+
+    </Authorized>
+    <NotAuthorized>
+        <frontend.Shared.AcessoNegado />
+    </NotAuthorized>
+</AuthorizeView>

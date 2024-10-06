@@ -1,0 +1,29 @@
+﻿@page "/"
+
+@inject NavigationManager NavigationManager
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IPermission? InternalPermission;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AuthenticationState);
+        var usuario = (await AuthenticationState)?.User;
+        InternalPermission = new AdministrationPermission(usuario);
+    }
+}
+
+<AuthorizeView Roles="@InternalPermission?.ReadPermission">
+    <Authorized>
+        <br />
+        <h1>Turning Points</h1>
+        <hr />
+        <br />
+    </Authorized>
+    <NotAuthorized>
+        <frontend.Pages.Choices.Index />
+    </NotAuthorized>
+</AuthorizeView>

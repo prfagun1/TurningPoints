@@ -1,0 +1,121 @@
+﻿@page "/Choices/StartStory/{Id:Guid}"
+
+@inject APIAcess APIAcess
+@inject NavigationManager NavigationManager
+
+
+<h1 class="title-green">@Title</h1>
+
+
+<div class="book-page">
+    @(new MarkupString(StoryChapter))
+</div>
+
+@if (CurrentChapter != null && CurrentChapter.IsEnd.HasValue && CurrentChapter.IsEnd.Value)
+{
+    @if (CurrentChapter.Badge != null)
+    {
+
+        <div class="badge-image-container">
+                    <img src="@System.Text.Encoding.Default.GetString(CurrentChapter.Badge)" class="badge-centered-image" />
+        </div>
+
+    }
+}
+
+<br>
+
+
+<div style="display: flex; justify-content: center; gap: 10px; chapter-options">
+    @{
+        int i = 1;
+        foreach (var button in ButtonsList)
+        {
+            <button type="submit" value="Pesquisar" class="btn btn-success" @onclick="(() => LoadNewChapter(button))">
+                Path @(i)
+            </button>
+            i++;
+        }
+    }
+</div>
+
+
+@code {
+    [Parameter] public String Id { get; set; }
+
+    string StoryChapter;
+    string Title;
+    Chapter CurrentChapter;
+    List<Guid> ButtonsList = new List<Guid>();
+
+    List<Chapter> ChapterList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await StoryLoad();
+        //await LoadFirstChapter();
+
+        await ChapterListLoad();
+    }
+
+    /*
+    void LoadFirstChapter()
+    {
+        //CurrentChapter = ChapterList.FirstOrDefault(x => x.Id == id);
+        StoryChapter = CurrentChapter.Content;
+        SetButtons();
+    }*/
+
+    void LoadNewChapter(Guid id)
+    {
+        CurrentChapter = ChapterList.FirstOrDefault(x => x.Id == id);
+        StoryChapter = CurrentChapter.Content;
+        SetButtons();
+    }
+
+    async Task StoryLoad()
+    {
+        SearchFilter internalFilter = new SearchFilter();
+        internalFilter.PageSize = int.MaxValue;
+        Story? story = await APIAcess.BuscaDadosPorId<Story>("v1", "Story/GetOpen", Id, Enumerators.APIConnection.api);
+
+        if(story == null)
+            NavigationManager.NavigateTo("/");
+
+        Title = story.Title;
+    }
+
+    async Task ChapterListLoad()
+    {
+        SearchFilter internalFilter = new SearchFilter();
+        internalFilter.PageSize = int.MaxValue;
+        ChapterList = await APIAcess.GetChapterListByGuid("v1", "Chapter/GetStoryChapter", Id, Enumerators.APIConnection.api);
+
+        CurrentChapter = ChapterList.FirstOrDefault(x => x.IsStart == true);
+        if (CurrentChapter == null)
+            NavigationManager.NavigateTo("/");
+
+        else{
+            StoryChapter = CurrentChapter.Content;
+            SetButtons();
+        }
+
+    }
+
+    void SetButtons()
+    {
+        ButtonsList = new List<Guid>();
+
+        if (CurrentChapter.Choice01.HasValue)
+            ButtonsList.Add(CurrentChapter.Choice01.Value);
+
+        if (CurrentChapter.Choice02.HasValue)
+            ButtonsList.Add(CurrentChapter.Choice02.Value);
+
+        if (CurrentChapter.Choice03.HasValue)
+            ButtonsList.Add(CurrentChapter.Choice03.Value);
+
+        if (CurrentChapter.Choice04.HasValue)
+            ButtonsList.Add(CurrentChapter.Choice04.Value);
+    }
+}

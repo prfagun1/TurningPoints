@@ -1,0 +1,201 @@
+@inject VariaveisAmbiente VariaveisAmbiente
+@inject NavigationManager NavigationManager
+
+@using System.IO
+@using System.Text
+
+<div class="row">
+    <div class="col-md-12 form">
+
+        <EditForm Model="@Entidade" OnValidSubmit="@OnValidSubmit">
+            <ValidationSummary />
+            <DataAnnotationsValidator />
+
+
+            <div class="row">
+                <div class="form-group col-md-12">
+                    <label>Title</label>
+                    <div>
+                        <InputText class="form-control" @bind-Value="@Entidade.Title" />
+                        <ValidationMessage For="@(() => Entidade.Title)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Title in portuguese</label>
+                    <div>
+                        <InputText class="form-control" @bind-Value="@Entidade.Titulo" />
+                        <ValidationMessage For="@(() => Entidade.Titulo)" />
+                    </div>
+                </div>
+
+
+                <div class="form-group col-md-2">
+                    <label>Recommended age</label>
+                    <div>
+                        <InputNumber class="form-control" @bind-Value="@Entidade.RecommendedAge" />
+                        <ValidationMessage For="@(() => Entidade.RecommendedAge)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Description</label>
+                    <div>
+                        <InputTextArea class="form-control caixa-descricao" @bind-Value="@Entidade.Description" />
+                        <ValidationMessage For="@(() => Entidade.Description)" />
+                    </div>
+                </div>
+
+
+                <div class="form-group col-md-12">
+                    <label>Description in portuguese</label>
+                    <div>
+                        <InputTextArea class="form-control caixa-descricao" @bind-Value="@Entidade.Descricao" />
+                        <ValidationMessage For="@(() => Entidade.Descricao)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>Tags</label>
+                    <div>
+                        <InputText class="form-control" @bind-Value="@Entidade.Tags" placeholder="Inform as tags para pesquisa" />
+                        <ValidationMessage For="@(() => Entidade.Tags)" />
+                    </div>
+                </div>
+
+                <div class="form-group col-md-12">
+                    @if (Entidade.Image != null)
+                    {
+                        <img src=@System.Text.Encoding.Default.GetString(Entidade.Image) />
+                    }
+                </div>
+
+                <div class="form-group col-md-12">
+                    <label>
+                        Drag to the box below or click to select the file that will be used to represent the story.
+                    </label>
+                    <br />
+                    <div class="drag drag-drop-zone">
+                        <BlazorInputFile.InputFile OnChange="AjustImage" accept="image/png,image/jpeg" />
+                        <p>The file must be 100 x 100px in size and a maximum of 300KB.</p>
+                    </div>
+
+                    <div class="espaco-superior-inferior">
+                        <p>
+                            @if (!string.IsNullOrEmpty(StoryImage.Image))
+                            {
+                                    <img src="@StoryImage.Image" />
+                                    <br />
+                            }
+                        </p>
+                        @if (string.IsNullOrEmpty(StoryImage.Status))
+                        {
+                                <p class="font-weight-bold">@StoryImage.Status</p>
+                        }
+                    </div>
+
+                </div>
+
+
+
+            </div>
+        <div>
+                @(new MarkupString(Mensagem))
+        </div>
+
+            @if (Processando)
+            {
+                        <div class="spinner-ainhamento-centro">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="form-group col-md-12 espacamento-cima-baixo"></div>
+            }
+
+            else
+            {
+                        <div class="form-group col-md-12" align="right">
+                            <br />
+                            <button @onclick="@Fechar" class="btn btn-success">
+                                <i class="fa fa-backward"></i> Close
+                            </button>
+
+                            &nbsp;&nbsp;
+                            <button type="submit" class="btn btn-success" >
+                                <i class="fa fa-save"></i> Save
+                            </button>
+
+                        </div>
+            }
+
+        </EditForm>
+
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public Story Entidade { get; set; } = new();
+    [Parameter] public bool Processando { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public Radzen.DialogService? Modal { get; set; }
+
+    [Parameter] public string Mensagem { get; set; } = string.Empty;
+
+    UploadImage StoryImage = new UploadImage();
+
+
+    protected override void OnInitialized()
+    {
+        if (Entidade == null){
+            Entidade = new();
+            if (Entidade.Image != null)
+                StoryImage.Image = System.Text.Encoding.Default.GetString(Entidade.Image);
+        }
+
+    }
+
+    void Fechar()
+    {
+        if (Modal != null)
+            Modal.Close(true);
+    }
+
+
+    async Task AjustImage(BlazorInputFile.IFileListEntry[] files)
+    {
+        await UploadImage(files, StoryImage);
+        Entidade.Image = Encoding.ASCII.GetBytes(StoryImage.Image);
+    }
+
+    async Task UploadImage(BlazorInputFile.IFileListEntry[] files, UploadImage image)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            var format = "image/jpeg";
+
+            if (file.Type.Contains("image"))
+            {
+                if (file.Size < 300000)
+                {
+                    var ms = new MemoryStream();
+                    await file.Data.CopyToAsync(ms);
+
+                    image.Image = $"data:{format};base64,{Convert.ToBase64String(ms.ToArray())}";
+                    image.Status = "";
+                    //Entidade.Cabecalho = ms.ToArray();
+                }
+                else
+                {
+                    image.Status = "The file can be a maximum of 300KB.";
+                }
+
+            }
+            else
+            {
+                image.Status = "Only image files are allowed.";
+            }
+        }
+    }
+
+}

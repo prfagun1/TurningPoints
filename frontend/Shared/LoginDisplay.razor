@@ -1,0 +1,12 @@
+﻿<AuthorizeView>
+    <Authorized>
+        <div class="login-display">
+            User logged in: @context?.User?.Identity?.Name &nbsp;|
+            <a href="LogOut" class="login-display">Logout</a>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <a href="Login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
